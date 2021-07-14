@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # battery - Print the battery level.
 #
@@ -16,7 +16,8 @@ alias echo="/usr/bin/echo" cat="/usr/bin/cat"
 # GENERIC OPTIONS
 
 [[ $1 == "-h" ]] || [[ $1 == "--help" ]] && printf "\
-battery - Print the battery level.
+battery - Print the battery level.\n\
+\n\
 Usage: battery [-hvl]\n\
        battery [--color=WHEN] [SOURCE]\n\
 \n\
