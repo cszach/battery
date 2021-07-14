@@ -1,7 +1,7 @@
 battery
 =======
 
-A Shell program to print your Linux machine's battery level.
+A Bash program to print your Linux machine's battery level.
 
 1. [Download](#download)
 2. [Use](#use)
@@ -94,7 +94,7 @@ I didn't want to use a graphical desktop on my [Parabola GNU/Linux-libre][para]
 laptop so I needed a way to know the battery level in the command line. I wanted
 the output to be colorized, too (e.g. green for good battery level, red for weak
 battery), so it was more than just a one-liner. Ultimately, I figured out I
-could share this little Shell script with the Internet, so I decided to support
+could share this little Bash script with the Internet, so I decided to support
 user-given power source and push this onto GitHub.
 
 You can easily integrate this program with your `PS1` command prompt, like this:
