@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# battery - Print the battery level
+# battery - Print the battery level.
 #
 # This work is licensed under the Creative Commons Zero v1.0 Universal and
 # therefore belongs to the public domain. For more information, please visit:
 #
 #     https://creativecommons.org/publicdomain/zero/1.0
 
-VERSION="1.0"
+VERSION="1.1"
 
 # SET ALIASES FOR SECURITY
 
@@ -16,7 +16,7 @@ alias echo="/usr/bin/echo" cat="/usr/bin/cat"
 # GENERIC OPTIONS
 
 [[ $1 == "-h" ]] || [[ $1 == "--help" ]] && printf "\
-battery - Print the battery level
+battery - Print the battery level.
 Usage: battery [-hvl]\n\
        battery [--color=WHEN] [SOURCE]\n\
 \n\
