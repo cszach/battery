@@ -1,0 +1,121 @@
+#!/bin/sh
+
+# battery - Print the battery level
+#
+# This work is licensed under the Creative Commons Zero v1.0 Universal and
+# therefore belongs to the public domain. For more information, please visit:
+#
+#     https://creativecommons.org/publicdomain/zero/1.0
+
+VERSION="1.0"
+
+# SET ALIASES FOR SECURITY
+
+alias echo="/usr/bin/echo" cat="/usr/bin/cat"
+
+# GENERIC OPTIONS
+
+[[ $1 == "-h" ]] || [[ $1 == "--help" ]] && printf "\
+battery - Print the battery level
+Usage: battery [-hvl]\n\
+       battery [--color=WHEN] [SOURCE]\n\
+\n\
+Options:\n\
+\n\
+  -h, --help		Print this help.\n\
+  -v, --version		Print this program's version.\n\
+  -l, --list		List detected power supplies.\n\
+  --color=WHEN		Colorize the output; WHEN can be 'charging',\n\
+    'discharging' (default), 'always', or 'never'.\n\
+\n\
+Examples:\n\
+\n\
+  battery\n\
+    Attempt to find a power source and print its level.\n\
+\n\
+  battery --list\n\
+    List power sources.\n\
+\n\
+  battery BAT0\n\
+    Print the level of BAT0 and color the output if BAT0 is discharging.\n\
+\n\
+  battery --color=always BAT1\n\
+    Print the level of BAT1 and color the output regardless of its\n\
+    charging state.\n"\
+    && exit 0
+
+[[ $1 == "-v" ]] || [[ $1 == "--version" ]] && echo $VERSION && exit 0
+
+# DETERMINE POWER SUPPLY
+
+SYS_POWER_SUPPLY_DIR="/sys/class/power_supply"
+
+[[ $1 == "-l" ]] || [[ $1 == "--list" ]] \
+    && ls -1 $SYS_POWER_SUPPLY_DIR && exit 0
+
+# Attempt to find BAT0 and BAT1.
+
+if [ -e $SYS_POWER_SUPPLY_DIR/BAT0 ]
+then
+    battery="BAT0"
+elif [ -e $SYS_POWER_SUPPLY_DIR/BAT1 ]
+then
+    battery="BAT1"
+fi
+
+# If the user specifies a power source, take it instead.
+
+[[ -n $1 ]] && [[ ${1:0:1} != "-" ]] && battery=$1
+[[ ${1:0:1} == "-" ]] && [[ -n $2 ]] && battery=$2
+
+battery_path="$SYS_POWER_SUPPLY_DIR/$battery"
+
+! [ -e $battery_path  ] \
+    && echo "Power supply '$battery' not found." && exit 2
+
+# ACCESS POWER SUPPLY'S LEVEL AND STATUS
+
+if [ -e $battery_path/capacity ]
+then
+    level=$(cat $battery_path/capacity)
+else
+    echo "Could not access $battery's level."
+    exit 3
+fi
+
+if [ -e $battery_path/status ]
+then
+    state=$(cat $battery_path/status)
+else
+    echo "Could not access $battery's status. Assuming to be discharging."
+    state="Discharging"
+fi
+
+# DETERMINE OUTPUT COLORIZATION
+
+color=""  # Text color
+attr=""   # Text attribute
+
+if [[ $1 == "--color=always" ]] || [[ $1 == "--color=${state,,}" ]] \
+|| ( [[ ${1:0:1} != "-" ]] && [[ $state == "Discharging" ]] )
+then
+    [ $level -le 100 ] && color=32 && attr=1  # 76-100
+    [ $level -le 75 ] && attr=0               # 51-75
+    [ $level -le 50 ] && color=33 && attr=1   # 26-50
+    [ $level -le 25 ] && color=31 && attr=0   # 11-25
+    [ $level -le 10 ] && attr=1               # 1-10
+elif [[ ${1:0:1} == "-" ]] && [[ $1 != "--color=charging" ]] \
+  && [[ $1 != "--color=discharging" ]] && [[ $1 != "--color=never" ]]
+then
+    echo "Invalid option '$1'. Invoke '-h' for help."
+    exit 1
+fi
+
+# PRINT LEVEL
+
+echo -e '\033['"$attr"';'"$color"'m'"$level%\033[0m"
+
+# UNALIAS & EXIT
+
+unalias echo cat
+exit 0
