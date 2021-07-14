@@ -26,7 +26,7 @@ Options:\n\
   -v, --version		Print this program's version.\n\
   -l, --list		List detected power supplies.\n\
   --color=WHEN		Colorize the output; WHEN can be 'charging',\n\
-    'discharging' (default), 'always', or 'never'.\n\
+                    'discharging' (default), 'always', or 'never'.\n\
 \n\
 Examples:\n\
 \n\
