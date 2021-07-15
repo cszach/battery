@@ -75,7 +75,7 @@ echo $?
 
 - `0`: Successful.
 - `1`: Invalid option.
-- `2`: Given battery could not be found.
+- `2`: Battery could not be found.
 - `3`: Battery's level could not be accessed.
 
 How it works
