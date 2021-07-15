@@ -69,10 +69,15 @@ fi
 [[ -n $1 ]] && [[ ${1:0:1} != "-" ]] && battery=$1
 [[ ${1:0:1} == "-" ]] && [[ -n $2 ]] && battery=$2
 
+# Exit if no battery is found.
+
+[[ -z $battery ]] && \
+    echo "No battery was auto-detected. Use '-l' to list batteries." && exit 2
+
 battery_path="$SYS_POWER_SUPPLY_DIR/$battery"
 
-! [ -e $battery_path  ] \
-    && echo "Power supply '$battery' not found." && exit 2
+! [ -e $battery_path  ] && \
+    echo "Power supply '$battery' not found." && exit 2
 
 # ACCESS POWER SUPPLY'S LEVEL AND STATUS
 
@@ -108,7 +113,7 @@ then
 elif [[ ${1:0:1} == "-" ]] && [[ $1 != "--color=charging" ]] \
   && [[ $1 != "--color=discharging" ]] && [[ $1 != "--color=never" ]]
 then
-    echo "Invalid option '$1'. Invoke '-h' for help."
+    echo "Invalid option '$1'. Use '-h' for help."
     exit 1
 fi
 
