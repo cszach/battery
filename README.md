@@ -23,37 +23,37 @@ mv battery ~/.local/bin  # Optional
 Use
 ---
 
-##### Get help
+#### Get help
 
 ```shell
 battery --help
 ```
 
-##### Print the battery level
+#### Print the battery level
 
 ```shell
 battery
 ```
 
-##### Print the battery level of `BAT1`
+#### Print the battery level of `BAT1`
 
 ```shell
 battery BAT1
 ```
 
-##### List batteries and power supplies
+#### List batteries and power supplies
 
 ```shell
 battery --list
 ```
 
-##### Print the battery level and colorize
+#### Print the battery level and colorize
 
 ```shell
 battery --color=always
 ```
 
-##### Print the battery level of `BAT1` and colorize only if it is charging
+#### Print the battery level of `BAT1` and colorize only if it is charging
 
 ```shell
 battery --color=charging BAT1
