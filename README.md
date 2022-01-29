@@ -85,7 +85,8 @@ How it works
 - The battery level is found in `/sys/class/power_supply/BATTERY/capacity` where
   `BATTERY` is a power source detected by your Linux system.
 - The charging state is found in `/sys/class/power_supply/BATTERY/status`. The
-  content of this file is either `Charging` or `Discharging`.
+  content of this file is either `Charging`, `Discharging`, `Full`, or
+  `Unknown`.
 
 Why I made this
 ---------------
