@@ -7,19 +7,19 @@
 #
 #     https://creativecommons.org/publicdomain/zero/1.0
 
-VERSION="1.1"
+VERSION="2.0"
 
 # SET ALIASES FOR SECURITY
 
 alias echo="/usr/bin/echo" cat="/usr/bin/cat"
 
-# GENERIC OPTIONS
+# PRINT HELP FUNCTION
 
-[[ $1 == "-h" ]] || [[ $1 == "--help" ]] && printf "\
+function print_help() {
+    printf "\
 battery - Print the battery level.\n\
 \n\
-Usage: battery [-hvl]\n\
-       battery [--color=WHEN] [SOURCE]\n\
+Usage: battery [--color=WHEN] [--percentage] [SOURCE]\n\
 \n\
 Options:\n\
 \n\
@@ -29,6 +29,8 @@ Options:\n\
   --color=WHEN      Colorize the output; WHEN can be either 'charging',\n\
                     'discharging' (default), 'full', 'unknown', 'always', or\n\
                     'never'.\n\
+  -%%, -p, -percent, --percentage\n\
+                    Print the percentage sign.\n\
 \n\
 Examples:\n\
 \n\
@@ -43,61 +45,137 @@ Examples:\n\
 \n\
   battery --color=always BAT1\n\
     Print the level of BAT1 and color the output regardless of its\n\
-    charging state.\n"\
-    && exit 0
+    charging state.\n"
+}
 
-[[ $1 == "-v" ]] || [[ $1 == "--version" ]] && echo $VERSION && exit 0
-[ $# -gt 2 ] && \
-    echo "Invalid number of arguments. Use '--help' for help." && exit 1
+# GENERIC OPTIONS
+
+[ "$1" = "-h" ] || [ "$1" = "--help" ] && print_help && exit 0
+
+[ "$1" = "-v" ] || [ "$1" = "--version" ] && echo $VERSION && exit 0
 
 # DETERMINE POWER SUPPLY
 
 SYS_POWER_SUPPLY_DIR="/sys/class/power_supply"
 
-[[ $1 == "-l" ]] || [[ $1 == "--list" ]] \
-    && ls -1 $SYS_POWER_SUPPLY_DIR && exit 0
+[ "$1" = "-l" ] || [ "$1" = "--list" ] \
+    && ls -1 "$SYS_POWER_SUPPLY_DIR" && exit 0
 
-# Attempt to find BAT0 and BAT1.
+# PARSE COMMAND LINE ARGUMENTS
 
-if [ -e $SYS_POWER_SUPPLY_DIR/BAT0 ]
-then
-    battery="BAT0"
-elif [ -e $SYS_POWER_SUPPLY_DIR/BAT1 ]
-then
-    battery="BAT1"
-fi
+color_when="discharging" # charging|discharging|full|unknown|always|never
+show_percent=false
+battery=
+debugging=false
 
-# If the user specifies a power source, take it instead.
+function check_color_when() {
+    [ "$color_when" != "charging"    ] && \
+    [ "$color_when" != "discharging" ] && \
+    [ "$color_when" != "full"        ] && \
+    [ "$color_when" != "unknown"     ] && \
+    [ "$color_when" != "always"      ] && \
+    [ "$color_when" != "never"       ] && \
+        echo "Invalid value for '--color'." >&2 && exit 1
+}
 
-[[ -n $1 ]] && [[ ${1:0:1} != "-" ]] && battery=$1
-[[ ${1:0:1} == "-" ]] && [[ -n $2 ]] && battery=$2
+for _ in "$@"
+do
+    case "$1" in
 
-# Exit if no battery is found.
+        --color=*)
+            color_when="${1#*=}"
+            check_color_when
+            ;;
 
-[[ -z $battery ]] && \
-    echo "No battery was auto-detected. Use '-l' to list batteries." && exit 2
+        --color)
+            color_when="$2"
+            check_color_when
+            shift
+            ;;
+
+        -% | -p | --percent | --percentage)
+            show_percent=true
+            ;;
+        
+        --debug)
+            debugging=true
+            ;;
+
+        "--") # End of options
+            [ -n "$2" ] && battery="$2"
+            break
+            ;;
+
+        "-"*)
+            echo "Invalid argument '$1'." >&2
+            exit 1
+            ;;
+
+        *)
+            battery="$1"
+            break
+            ;;
+    esac
+
+    shift
+done
+
+# If a battery identifier was not specified, attempt to find BAT0 and BAT1.
+
+[ -z "$battery" ] && \
+    if [ -e "$SYS_POWER_SUPPLY_DIR"/BAT0 ]
+    then
+        battery="BAT0"
+    elif [ -e "$SYS_POWER_SUPPLY_DIR"/BAT1 ]
+    then
+        battery="BAT1"
+    fi
+
+# If no battery is found, exit
+
+[ -z "$battery" ] && \
+    echo "No battery was auto-detected. Use '-l' to list batteries." >&2 && \
+    exit 2
+
+# Otherwise, get information about battery
 
 battery_path="$SYS_POWER_SUPPLY_DIR/$battery"
+battery_level=
+battery_status=
 
-! [ -e $battery_path  ] && \
-    echo "Power supply '$battery' not found." && exit 2
+! [ -e "$battery_path" ] && \
+    echo "Power supply '$battery' not found." >&2 && \
+    exit 2
 
 # ACCESS POWER SUPPLY'S LEVEL AND STATUS
 
-if [ -e $battery_path/capacity ]
+if [ -e "$battery_path"/capacity ]
 then
-    level=$(cat $battery_path/capacity)
+    battery_level=$(cat "$battery_path"/capacity)
 else
-    echo "Could not access $battery's level."
+    echo "Could not access $battery's level." >&2
     exit 3
 fi
 
-if [ -e $battery_path/status ]
+if [ -e "$battery_path"/status ]
 then
-    state=$(cat $battery_path/status)
+    battery_status=$(cat "$battery_path"/status)
 else
-    echo "Could not access $battery's status. Assuming to be discharging."
-    state="Discharging"
+    echo "Could not access $battery's status. Assuming to be discharging." >&2
+    battery_status="Discharging"
+fi
+
+# DEBUGGING
+
+if [ $debugging = true ]
+then
+    echo -e "\
+color_when     = $color_when\n\
+show_percent   = $show_percent\n\
+battery        = $battery\n\
+battery_path   = $battery_path\n\
+battery_level  = $battery_level\n\
+battery_status = $battery_status"
 fi
 
 # DETERMINE OUTPUT COLORIZATION
@@ -105,28 +183,22 @@ fi
 color=""  # Text color
 attr=""   # Text attribute
 
-# If --color is set to always or matches the battery $state, or the user did not
-# specify --color but the battery is discharging, the output is to be colorized,
-# so set the text color and text attribute according to the battery level.
-if [[ $1 == "--color=always" ]] || [[ $1 == "--color=${state,,}" ]] \
-|| ( [[ ${1:0:1} != "-" ]] && [[ $state == "Discharging" ]] )
+if [ "$color_when" = "always" ] || [ "$color_when" = "${battery_status,,}" ] \
+|| { [ "$color_when" = "discharging" ] && [ "$battery_status" = "Discharging" ]; }
 then
-    [ $level -le 100 ] && color=32 && attr=1  # 76-100 (bold green)
-    [ $level -le 75 ] && attr=0               # 51-75 (normal green)
-    [ $level -le 50 ] && color=33 && attr=1   # 26-50 (bold yellow)
-    [ $level -le 25 ] && color=31 && attr=0   # 11-25 (normal red)
-    [ $level -le 10 ] && attr=1               # 1-10 (bold red)
-elif [[ ${1:0:1} == "-" ]] && [[ $1 != "--color=charging" ]] \
-  && [[ $1 != "--color=discharging" ]] && [[ $1 != "--color=full" ]] \
-  && [[ $1 != "--color=unknown" ]] && [[ $1 != "--color=never" ]]
-then
-    echo "Invalid option '$1'. Use '-h' for help."
-    exit 1
+    [ "$battery_level" -le 100 ] && color=32 && attr=1  # 76-100 (bold green)
+    [ "$battery_level" -le 75 ] && attr=0               # 51-75 (normal green)
+    [ "$battery_level" -le 50 ] && color=33 && attr=1   # 26-50 (bold yellow)
+    [ "$battery_level" -le 25 ] && color=31 && attr=0   # 11-25 (normal red)
+    [ "$battery_level" -le 10 ] && attr=1               # 1-10 (bold red)
 fi
 
 # PRINT LEVEL
 
-echo -e '\033['"$attr"';'"$color"'m'"$level%\033[0m"
+PERCENT=""
+[ $show_percent = true ] && PERCENT="%"
+
+echo -e '\033['"$attr"';'"$color"'m'"$battery_level$PERCENT\033[0m"
 
 # UNALIAS & EXIT
 
