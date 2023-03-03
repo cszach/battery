@@ -7,7 +7,7 @@
 #
 #     https://creativecommons.org/publicdomain/zero/1.0
 
-VERSION="2.0"
+VERSION="2.1"
 
 # SET ALIASES FOR SECURITY
 
@@ -178,10 +178,13 @@ battery_level  = $battery_level\n\
 battery_status = $battery_status"
 fi
 
-# DETERMINE OUTPUT COLORIZATION
+# DETERMINE FORMATTING & PRINT
 
 color=""  # Text color
 attr=""   # Text attribute
+PERCENT=""
+
+[ $show_percent = true ] && PERCENT="%"
 
 if [ "$color_when" = "always" ] || [ "$color_when" = "${battery_status,,}" ] \
 || { [ "$color_when" = "discharging" ] && [ "$battery_status" = "Discharging" ]; }
@@ -191,14 +194,11 @@ then
     [ "$battery_level" -le 50 ] && color=33 && attr=1   # 26-50 (bold yellow)
     [ "$battery_level" -le 25 ] && color=31 && attr=0   # 11-25 (normal red)
     [ "$battery_level" -le 10 ] && attr=1               # 1-10 (bold red)
+
+    echo -e '\033['"$attr"';'"$color"'m'"$battery_level$PERCENT\033[0m"
+else
+    echo -e "$battery_level$PERCENT"
 fi
-
-# PRINT LEVEL
-
-PERCENT=""
-[ $show_percent = true ] && PERCENT="%"
-
-echo -e '\033['"$attr"';'"$color"'m'"$battery_level$PERCENT\033[0m"
 
 # UNALIAS & EXIT
 
