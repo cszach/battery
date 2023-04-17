@@ -1,0 +1,5 @@
+description: Bash script to print your Linux computer's battery level.
+theme: jekyll-theme-hacker
+show_downloads: true
+
+exclude: [bundle]
