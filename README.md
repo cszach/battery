@@ -15,7 +15,7 @@ Download
 --------
 
 ```shell
-curl -O https://novakcgx.github.io/battery/battery
+curl -O https://cszach.github.io/battery/battery
 chmod +x battery
 mv battery ~/.local/bin  # Optional
 ```
